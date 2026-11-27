@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOJO Trip 🍃 บันทึก & จัดการทริปท่องเที่ยว</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mitr:wght@300;400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            latte: {
+              50: '#FCFAF6',
+              100: '#F7F2EC',
+              200: '#EFE7DC',
+              300: '#E2D4C3',
+              400: '#C4B29E',
+              500: '#8C745D',
+              600: '#735E4A',
+              700: '#5A4838',
+              800: '#3D3025'
+            },
+            terracotta: {
+              50: '#FDF6F2',
+              100: '#FBEDE6',
+              200: '#F7D8CB',
+              300: '#F0BAA5',
+              400: '#E48F73',
+              500: '#D97757',
+              600: '#C25F3E',
+              700: '#9E472A'
+            },
+            sage: {
+              50: '#F4F8F2',
+              100: '#E8F1E4',
+              200: '#D3E3CC',
+              300: '#B5CEA9',
+              400: '#94B486',
+              500: '#78996A',
+              600: '#5E7D51',
+              700: '#47613D'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Mitr', 'Prompt', -apple-system, sans-serif;
+      background: radial-gradient(circle at 10% 15%, #FAF5EE 0%, #F5EDE3 50%, #EFE5D7 100%);
+      color: #3D3025;
+      min-height: 100vh;
+    }
+    input, select, button {
+      font-family: inherit;
+    }
+    .cute-card {
+      background: #FCFAF6;
+      border: 1.5px solid #EADBCC;
+      box-shadow: 0 4px 20px rgba(125, 95, 68, 0.05);
+      border-radius: 1.5rem;
+    }
+    .cute-input {
+      background-color: #F8F3EB;
+      border: 1.5px solid #E2D4C3;
+      color: #3D3025;
+      transition: all 0.2s ease;
+    }
+    .cute-input:focus {
+      outline: none;
+      background-color: #FCFAF6;
+      border-color: #D97757;
+      box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.15);
+    }
+    .donut-segment {
+      transition: stroke-dasharray 0.6s ease, stroke-dashoffset 0.6s ease;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; color: black !important; }
+      .cute-card { border: 1px solid #ccc !important; box-shadow: none !important; background: white !important; }
+    }
+  </style>
+</head>
+<body class="py-5 sm:py-9 px-3.5 sm:px-6">
+
+  <!-- Toast Notification Alert -->
+  <div id="toastNotification" class="fixed top-5 right-5 z-50 bg-[#3D3025] text-white px-4 py-2.5 rounded-2xl shadow-xl text-xs sm:text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-[-20px] opacity-0 pointer-events-none no-print">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">บันทึกข้อมูลแล้ว</span>
+  </div>
+
+  <!-- Hidden File Input for CSV Import -->
+  <input type="file" id="csvFileInput" accept=".csv,text/csv" onchange="handleCSVImport(event)" class="hidden">
+
+  <div class="max-w-5xl mx-auto space-y-5">
+
+    <!-- Top Navigation / Cute Header -->
+    <header class="cute-card p-5 sm:p-7 flex flex-col sm:flex-row justify-between items-center gap-4 relative overflow-hidden bg-gradient-to-r from-terracotta-100 via-latte-100 to-sage-100 border-latte-300">
+      <div class="absolute -right-8 -bottom-10 w-36 h-36 bg-sage-200/50 rounded-full blur-sm pointer-events-none"></div>
+      <div class="absolute right-28 -top-8 w-28 h-28 bg-terracotta-200/40 rounded-full blur-sm pointer-events-none"></div>
+
+      <div class="flex items-center gap-4 z-10 text-center sm:text-left">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-terracotta-200 via-latte-100 to-sage-200 flex items-center justify-center text-3xl shadow-sm border border-latte-300 flex-shrink-0">
+          🚗✨
+        </div>
+        <div>
+          <div class="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+            <h1 class="text-xl sm:text-2xl font-semibold text-latte-800 tracking-tight">MOJO Trip Planner</h1>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-sage-200/80 text-sage-700 font-medium border border-sage-300">
+              🍃 มินิมอลอบอุ่น
+            </span>
+          </div>
+          <p class="text-xs sm:text-sm text-latte-600 mt-1 flex items-center justify-center sm:justify-start gap-1.5">
+            <span>🐻</span> จดค่าใช้จ่าย &bull; <span>🍩</span> กราฟวงกลมสรุปในตัว &bull; <span>📥</span> นำเข้า/ส่งออก CSV
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 z-10 no-print flex-wrap justify-center">
+        <button onclick="openTripsModal()" class="px-3.5 py-2 text-xs rounded-xl bg-latte-200/80 hover:bg-latte-300 text-latte-800 border border-latte-400 transition font-medium flex items-center gap-1.5 shadow-xs">
+          <span>🧳</span> คลังทริป (<span id="tripCountBadge">2</span>)
+        </button>
+        <button onclick="triggerImportCSV()" title="นำเข้าไฟล์ CSV เดียวกันกับที่ Export ออกไป" class="px-3.5 py-2 text-xs rounded-xl bg-latte-100 hover:bg-latte-200 text-latte-700 border border-latte-300 transition font-medium flex items-center gap-1.5 shadow-xs">
+          <span>📥</span> นำเข้า CSV
+        </button>
+        <button onclick="exportToCSV()" class="px-3.5 py-2 text-xs rounded-xl bg-sage-100 hover:bg-sage-200 text-sage-700 border border-sage-300 transition font-medium flex items-center gap-1.5 shadow-xs">
+          <span>📤</span> ส่งออก CSV
+        </button>
+        <button onclick="window.print()" class="px-3.5 py-2 text-xs rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white transition font-medium shadow-sm flex items-center gap-1.5">
+          <span>🖨️</span> พิมพ์ / PDF
+        </button>
+      </div>
+    </header>
+
+    <!-- 0. แถบดึงข้อมูลทริปที่ผ่านมา & สลับทริป (Trip Selector Bar) -->
+    <section class="cute-card p-4 sm:p-5 bg-gradient-to-r from-latte-50 to-latte-100/90 border-latte-300 no-print">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3.5">
+        <div class="flex items-center gap-2.5 flex-1 w-full md:w-auto">
+          <div class="w-8 h-8 rounded-xl bg-terracotta-100 text-terracotta-700 flex items-center justify-center text-sm font-bold flex-shrink-0 border border-terracotta-200">
+            🧳
+          </div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <label for="tripSelector" class="text-xs font-semibold text-latte-700 flex items-center gap-1">
+                <span>เลือกทริปที่บันทึกไว้:</span>
+              </label>
+              <span id="activeTripBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-sage-100 text-sage-700 border border-sage-200">
+                กำลังเปิดดู
+              </span>
+            </div>
+            <select id="tripSelector" onchange="switchTrip(this.value)" class="cute-input w-full mt-1 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-medium text-latte-800 cursor-pointer">
+              <!-- Rendered options of saved trips -->
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+          <button onclick="createNewTrip()" class="px-3.5 py-2 text-xs rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-medium transition shadow-xs flex items-center gap-1">
+            <span>➕</span> สร้างทริปใหม่
+          </button>
+          <button onclick="duplicateCurrentTrip()" title="ทำสำเนาทริปนี้เพื่อนำไปปรับต่อ" class="px-3 py-2 text-xs rounded-xl bg-latte-200 hover:bg-latte-300 text-latte-700 border border-latte-300 transition font-medium flex items-center gap-1">
+            <span>📋</span> สำเนาทริป
+          </button>
+          <button onclick="deleteCurrentTrip()" title="ลบทริปปัจจุบัน" class="p-2 text-xs rounded-xl bg-terracotta-50 hover:bg-terracotta-100 text-terracotta-600 border border-terracotta-200 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. ตั้งชื่อทริป & งบประมาณ -->
+    <section class="cute-card p-5 sm:p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-latte-200">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🏡</span>
+          <div>
+            <h2 class="font-medium text-latte-800 text-base">ข้อมูลทริปและงบประมาณ</h2>
+            <p class="text-[11px] text-latte-500 flex items-center gap-1.5 mt-0.5">
+              <span>พิมพ์แก้ไขได้ทันที ข้อมูลจะอัปเดตเรียลไทม์</span>
+              <span id="saveStatusIndicator" class="text-sage-600 font-semibold">• บันทึกอัตโนมัติแล้ว</span>
+            </p>
+          </div>
+        </div>
+        <span class="text-xs text-latte-500 bg-latte-100 px-2.5 py-0.5 rounded-full border border-latte-200">Step 1</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1.5 flex items-center gap-1">
+            <span>🏷️</span> ชื่อทริป / จุดหมายปลายทาง
+          </label>
+          <input type="text" id="tripName" placeholder="เช่น ทริปแอ่วเหนือ เชียงใหม่-ม่อนแจ่ม" 
+            class="cute-input w-full px-3.5 py-2.5 rounded-xl text-sm placeholder-latte-400 font-medium">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1.5 flex items-center gap-1">
+            <span>🗓️</span> จำนวนวันเที่ยว (วัน)
+          </label>
+          <input type="number" id="tripDays" min="1" value="3" 
+            class="cute-input w-full px-3.5 py-2.5 rounded-xl text-sm font-medium">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1.5 flex items-center gap-1">
+            <span>💰</span> งบประมาณที่ตั้งไว้ (บาท)
+          </label>
+          <input type="number" id="tripBudget" min="0" placeholder="เช่น 15000" 
+            class="cute-input w-full px-3.5 py-2.5 rounded-xl text-sm font-semibold text-terracotta-700">
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. กรอกค่าใช้จ่ายรายวัน -->
+    <section class="cute-card p-5 sm:p-6 space-y-4 no-print">
+      <div class="flex items-center justify-between pb-3 border-b border-latte-200">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">✍️</span>
+          <div>
+            <h2 class="font-medium text-latte-800 text-base">กรอกค่าใช้จ่ายรายวัน</h2>
+            <p class="text-[11px] text-latte-500">เพิ่มรายการใหม่ลงในทริปนี้ หรือกดปุ่ม ✏️ ในตารางด้านล่างเพื่อแก้ไขรายการเดิม</p>
+          </div>
+        </div>
+        <span class="text-xs text-latte-500 bg-latte-100 px-2.5 py-0.5 rounded-full border border-latte-200">Step 2</span>
+      </div>
+
+      <form id="expenseForm" onsubmit="addExpense(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">วัน/วันที่</label>
+          <select id="expenseDay" class="cute-input w-full px-3 py-2.5 rounded-xl text-sm cursor-pointer">
+            <!-- Dynamic days -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">หมวดหมู่</label>
+          <select id="expenseCategory" class="cute-input w-full px-3 py-2.5 rounded-xl text-sm cursor-pointer font-medium">
+            <option value="ค่าEV">⚡ ค่าEV & เดินทาง</option>
+            <option value="ค่าที่พัก">🏡 ค่าที่พัก</option>
+            <option value="ค่าอาหาร/เครื่องดื่ม">☕ ค่าอาหาร & คาเฟ่</option>
+            <option value="ค่าเข้าชม/กิจกรรม">🎟️ เข้าชม & กิจกรรม</option>
+            <option value="อื่น ๆ">🧸 อื่น ๆ & ช้อปปิ้ง</option>
+          </select>
+        </div>
+
+        <div class="lg:col-span-1">
+          <label class="block text-xs font-medium text-latte-600 mb-1">ชื่อรายการ</label>
+          <input type="text" id="expenseTitle" required placeholder="เช่น ชาร์จไฟ ปตท., กาแฟดริป" 
+            class="cute-input w-full px-3 py-2.5 rounded-xl text-sm placeholder-latte-400">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">จำนวนเงิน (บาท)</label>
+          <input type="number" id="expenseAmount" required min="0.01" step="any" placeholder="0.00" 
+            class="cute-input w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-latte-800">
+        </div>
+
+        <div class="flex items-end">
+          <button type="submit" 
+            class="w-full py-2.5 px-4 bg-sage-500 hover:bg-sage-600 text-white font-medium rounded-xl transition shadow-sm text-sm flex items-center justify-center gap-1.5 h-[42px]">
+            <span>➕</span> บันทึกรายการ
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- 3. สรุปสัดส่วนค่าใช้จ่าย & กราฟวงกลมมินิมอล (Minimalist Hero Summary) -->
+    <section class="space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">🍩</span>
+          <h2 class="text-lg font-semibold text-latte-800" id="summaryTripTitle">สัดส่วนค่าใช้จ่าย & การใช้งบประมาณ</h2>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap">
+          <span id="tripDailyAvgBadge" class="text-xs bg-latte-100 text-latte-700 px-3 py-1 rounded-full border border-latte-200 font-medium">
+            ☕ เฉลี่ย 0.00 บ./วัน
+          </span>
+          <span id="tripDurationBadge" class="text-xs bg-latte-200 text-latte-700 px-3 py-1 rounded-full border border-latte-300 font-medium">
+            🌿 3 วัน
+          </span>
+        </div>
+      </div>
+
+      <!-- กล่องสรุปผลเดี่ยว คลีน มินิมอล พร้อมกราฟวงกลมในตัว -->
+      <div id="budgetProgressContainer" class="cute-card p-5 sm:p-6 space-y-5 bg-gradient-to-br from-latte-50 via-[#FCFAF6] to-latte-100/60 border-latte-300">
+        
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b border-latte-200">
+          <div>
+            <h3 class="font-semibold text-sm sm:text-base text-latte-800">สรุปภาพรวมงบประมาณ & สัดส่วน 5 หมวดหมู่</h3>
+            <p class="text-[11px] text-latte-500">มองเห็นสัดส่วนค่าใช้จ่ายทันทีผ่านกราฟวงกลมและแถบเทียบงบประมาณ</p>
+          </div>
+          <div class="flex items-center gap-1.5 bg-latte-100 px-3 py-1 rounded-full border border-latte-200">
+            <span class="text-xs font-medium text-latte-600">สัดส่วนงบที่ใช้:</span>
+            <span id="progressBarLabel" class="text-sm font-bold text-terracotta-600 tabular-nums">0%</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+          
+          <!-- Left: Minimalist Donut Chart (SVG) -->
+          <div class="md:col-span-5 flex flex-col items-center justify-center py-2 relative">
+            <div class="relative w-44 h-44 sm:w-48 sm:h-48 flex items-center justify-center">
+              <svg id="donutSvg" viewBox="0 0 140 140" class="w-full h-full transform -rotate-90">
+                <circle cx="70" cy="70" r="50" fill="transparent" stroke="#EFE7DC" stroke-width="16" />
+                <g id="donutSegmentsGroup"></g>
+              </svg>
+              
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+                <span class="text-[11px] font-medium text-latte-500" id="donutCenterSub">ใช้งบไปแล้ว</span>
+                <span class="text-2xl sm:text-3xl font-bold text-latte-800 tabular-nums tracking-tight mt-0.5" id="donutCenterValue">0%</span>
+                <span class="text-[11px] font-semibold text-terracotta-600 mt-0.5 tabular-nums" id="donutCenterTotal">0.00 บ.</span>
+              </div>
+            </div>
+            
+            <p class="text-[11px] text-latte-400 mt-2 text-center" id="donutFootnote">
+              แบ่งสัดส่วนตาม 5 หมวดหมู่หลัก
+            </p>
+          </div>
+
+          <!-- Right: Progress Bar, Category Breakdown & Alert Box -->
+          <div class="md:col-span-7 space-y-4">
+            
+            <div class="space-y-1.5">
+              <div class="flex justify-between items-center text-xs font-medium text-latte-600">
+                <span>แถบระดับการใช้งบประมาณรวม</span>
+                <span id="progressBarDetails" class="font-semibold text-latte-700 text-[11px]">0.00 / 0.00 บาท</span>
+              </div>
+              <div class="w-full bg-latte-200 rounded-full h-3 overflow-hidden p-0.5 border border-latte-300">
+                <div id="progressBarFill" class="h-full bg-sage-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- หมวดหมู่และสัดส่วน (Legend) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1" id="donutLegendContainer">
+              <!-- Rendered by JS -->
+            </div>
+
+            <!-- Cute Alert Box -->
+            <div id="budgetAlertBox" class="p-3 rounded-xl flex items-center gap-2 text-xs font-medium">
+              <!-- Alert Message -->
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 4. สรุปรายวัน & ตารางรายการพร้อมปุ่มแก้ไข -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      
+      <!-- สรุปแยกรายวัน -->
+      <div class="cute-card p-5 space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-latte-200">
+          <h3 class="font-semibold text-sm text-latte-800 flex items-center gap-1.5">
+            <span>🗓️</span> สรุปแยกตามวัน
+          </h3>
+          <span class="text-xs text-latte-500 bg-latte-100 px-2 py-0.5 rounded-md border border-latte-200">รายวัน</span>
+        </div>
+        <div class="divide-y divide-latte-200" id="dailySummaryList">
+          <!-- Dynamic -->
+        </div>
+      </div>
+
+      <!-- ตารางรายการทั้งหมด -->
+      <div class="lg:col-span-2 cute-card p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-latte-200">
+          <div>
+            <h3 class="font-semibold text-sm text-latte-800 flex items-center gap-1.5">
+              <span>📝</span> รายการค่าใช้จ่ายทั้งหมด
+            </h3>
+            <p class="text-[11px] text-latte-500">กดปุ่ม ✏️ เพื่อแก้ไข หรือ 🗑️ เพื่อลบรายการ</p>
+          </div>
+          <div class="flex items-center gap-2 no-print">
+            <select id="filterCategory" onchange="renderExpenseTable()" class="cute-input text-xs px-2.5 py-1.5 rounded-lg cursor-pointer">
+              <option value="ALL">ทุกหมวดหมู่</option>
+              <option value="ค่าEV">⚡ ค่าEV & เดินทาง</option>
+              <option value="ค่าที่พัก">🏡 ค่าที่พัก</option>
+              <option value="ค่าอาหาร/เครื่องดื่ม">☕ อาหาร & คาเฟ่</option>
+              <option value="ค่าเข้าชม/กิจกรรม">🎟️ เข้าชม & กิจกรรม</option>
+              <option value="อื่น ๆ">🧸 อื่น ๆ</option>
+            </select>
+            <select id="filterDay" onchange="renderExpenseTable()" class="cute-input text-xs px-2.5 py-1.5 rounded-lg cursor-pointer">
+              <option value="ALL">ทุกวัน</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-latte-200 bg-latte-100/60">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead>
+              <tr class="border-b border-latte-200 text-xs font-medium text-latte-600 bg-latte-200/60">
+                <th class="py-2.5 px-3">วัน</th>
+                <th class="py-2.5 px-3">หมวด</th>
+                <th class="py-2.5 px-3">รายการ</th>
+                <th class="py-2.5 px-3 text-right">จำนวน (บาท)</th>
+                <th class="py-2.5 px-3 text-center no-print w-24">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="expenseTableBody" class="divide-y divide-latte-200/80">
+              <!-- Rendered items with Edit & Delete buttons -->
+            </tbody>
+          </table>
+        </div>
+
+        <div id="emptyState" class="py-8 text-center text-latte-500 space-y-2 hidden">
+          <div class="text-3xl">🧺</div>
+          <p class="text-xs">ยังไม่มีรายการค่าใช้จ่ายในทริปนี้ เริ่มกรอกที่ด้านบน หรือกด "นำเข้า CSV" ได้เลยน้า</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-2 pt-2 text-xs text-latte-500 no-print border-t border-latte-200">
+          <div class="flex items-center gap-3">
+            <button onclick="clearAllExpenses()" class="text-terracotta-600 hover:text-terracotta-700 underline font-medium flex items-center gap-1">
+              <span>🗑️</span> ล้างรายการในทริปนี้
+            </button>
+            <button onclick="resetToDefaultData()" class="text-latte-600 hover:text-latte-800 underline font-medium flex items-center gap-1">
+              <span>🔄</span> รีเซ็ตข้อมูลทริปตัวอย่าง
+            </button>
+          </div>
+          <span class="flex items-center gap-1">
+            <span>💾</span> บันทึกอัตโนมัติในเบราว์เซอร์
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Cute Footer -->
+    <footer class="text-center py-6 text-xs text-latte-500 no-print flex items-center justify-center gap-2">
+      <span>🚗</span> MOJO Trip Planner &bull; วางแผนเที่ยวสบายใจในสไตล์มินิมอลอบอุ่น <span>🍃🤎</span>
+    </footer>
+
+  </div>
+
+  <!-- Modal 1: แก้ไขรายการค่าใช้จ่าย (Edit Expense Modal) -->
+  <div id="editExpenseModal" class="fixed inset-0 bg-[#3D3025]/40 backdrop-blur-xs z-50 flex items-center justify-center p-3 hidden no-print">
+    <div class="cute-card max-w-md w-full overflow-hidden flex flex-col shadow-2xl border-latte-300">
+      <div class="p-4 border-b border-latte-200 flex items-center justify-between bg-gradient-to-r from-latte-50 to-latte-100">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">✏️</span>
+          <h3 class="font-semibold text-sm text-latte-800">แก้ไขรายการค่าใช้จ่าย</h3>
+        </div>
+        <button onclick="closeEditExpenseModal()" class="w-7 h-7 rounded-full bg-latte-200 hover:bg-latte-300 text-latte-700 flex items-center justify-center text-xs font-bold transition">✕</button>
+      </div>
+
+      <form id="editExpenseForm" onsubmit="saveEditedExpense(event)" class="p-5 space-y-3.5">
+        <input type="hidden" id="editExpenseId">
+        
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">วัน/วันที่</label>
+          <select id="editExpenseDay" class="cute-input w-full px-3 py-2 rounded-xl text-xs font-medium"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">หมวดหมู่</label>
+          <select id="editExpenseCategory" class="cute-input w-full px-3 py-2 rounded-xl text-xs font-medium">
+            <option value="ค่าEV">⚡ ค่าEV & เดินทาง</option>
+            <option value="ค่าที่พัก">🏡 ค่าที่พัก</option>
+            <option value="ค่าอาหาร/เครื่องดื่ม">☕ ค่าอาหาร & คาเฟ่</option>
+            <option value="ค่าเข้าชม/กิจกรรม">🎟️ เข้าชม & กิจกรรม</option>
+            <option value="อื่น ๆ">🧸 อื่น ๆ & ช้อปปิ้ง</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">ชื่อรายการ</label>
+          <input type="text" id="editExpenseTitle" required class="cute-input w-full px-3 py-2 rounded-xl text-xs">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-latte-600 mb-1">จำนวนเงิน (บาท)</label>
+          <input type="number" id="editExpenseAmount" required min="0.01" step="any" class="cute-input w-full px-3 py-2 rounded-xl text-xs font-semibold text-latte-800">
+        </div>
+
+        <div class="pt-3 flex justify-end gap-2 border-t border-latte-100">
+          <button type="button" onclick="closeEditExpenseModal()" class="px-3.5 py-1.5 rounded-xl bg-latte-200 hover:bg-latte-300 text-latte-700 text-xs font-medium transition">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-4 py-1.5 rounded-xl bg-sage-500 hover:bg-sage-600 text-white text-xs font-medium transition shadow-xs flex items-center gap-1">
+            <span>💾</span> บันทึกการแก้ไข
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: คลังทริปที่ผ่านมาทั้งหมด (Past Trips Modal) -->
+  <div id="tripsModal" class="fixed inset-0 bg-[#3D3025]/40 backdrop-blur-xs z-50 flex items-center justify-center p-3 hidden no-print">
+    <div class="cute-card max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl border-latte-300">
+      
+      <div class="p-5 border-b border-latte-200 flex items-center justify-between bg-gradient-to-r from-latte-50 to-latte-100">
+        <div class="flex items-center gap-2.5">
+          <span class="text-2xl">🧳</span>
+          <div>
+            <h3 class="font-semibold text-base text-latte-800">คลังทริปที่ผ่านมาทั้งหมด</h3>
+            <p class="text-xs text-latte-500">เลือกดึงข้อมูลทริปเดิมมาดู สรุปผล หรือแก้ไขได้ตามใจชอบ</p>
+          </div>
+        </div>
+        <button onclick="closeTripsModal()" class="w-8 h-8 rounded-full bg-latte-200 hover:bg-latte-300 text-latte-700 flex items-center justify-center text-sm font-bold transition">
+          ✕
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-3.5 flex-1" id="pastTripsListContainer">
+        <!-- Rendered list of trips cards -->
+      </div>
+
+      <div class="p-4 border-t border-latte-200 bg-latte-50 flex justify-between items-center text-xs">
+        <button onclick="createNewTrip()" class="px-3.5 py-2 rounded-xl bg-terracotta-500 hover:bg-terracotta-600 text-white font-medium transition flex items-center gap-1">
+          <span>➕</span> เพิ่มทริปใหม่
+        </button>
+        <button onclick="closeTripsModal()" class="px-4 py-2 rounded-xl bg-latte-200 hover:bg-latte-300 text-latte-700 font-medium transition">
+          ปิดหน้าต่าง
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: ตัวเลือกการนำเข้า CSV (CSV Import Options Modal) -->
+  <div id="importOptionsModal" class="fixed inset-0 bg-[#3D3025]/40 backdrop-blur-xs z-50 flex items-center justify-center p-3 hidden no-print">
+    <div class="cute-card max-w-md w-full overflow-hidden flex flex-col shadow-2xl border-latte-300">
+      <div class="p-4 border-b border-latte-200 flex items-center justify-between bg-gradient-to-r from-latte-50 to-latte-100">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📥</span>
+          <h3 class="font-semibold text-sm text-latte-800">นำเข้าข้อมูลจากไฟล์ CSV</h3>
+        </div>
+        <button onclick="closeImportModal()" class="w-7 h-7 rounded-full bg-latte-200 hover:bg-latte-300 text-latte-700 flex items-center justify-center text-xs font-bold transition">✕</button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div class="p-3.5 rounded-xl bg-sage-50 border border-sage-200 text-xs text-sage-800">
+          <p class="font-semibold flex items-center gap-1.5 text-sm">
+            <span>✅</span> พบข้อมูล <span id="importItemCount">0</span> รายการ
+          </p>
+          <p class="mt-1 text-sage-700" id="importSummaryText">ยอดรวม 0.00 บาท</p>
+        </div>
+
+        <p class="text-xs text-latte-600 font-medium">คุณต้องการนำเข้าข้อมูลนี้ในรูปแบบใด?</p>
+
+        <div class="space-y-2">
+          <button onclick="confirmImport('NEW')" class="w-full p-3 rounded-xl border border-latte-300 bg-latte-50 hover:bg-latte-100 text-left transition flex items-center gap-3">
+            <span class="text-xl">✨</span>
+            <div>
+              <p class="text-xs font-semibold text-latte-800">1. สร้างเป็นทริปใหม่</p>
+              <p class="text-[11px] text-latte-500">สร้างทริปใหม่โดยไม่กระทบทริปปัจจุบัน</p>
+            </div>
+          </button>
+
+          <button onclick="confirmImport('REPLACE')" class="w-full p-3 rounded-xl border border-terracotta-200 bg-terracotta-50/60 hover:bg-terracotta-100 text-left transition flex items-center gap-3">
+            <span class="text-xl">🔄</span>
+            <div>
+              <p class="text-xs font-semibold text-terracotta-800">2. แทนที่รายการในทริปนี้</p>
+              <p class="text-[11px] text-terracotta-600">ล้างรายการเดิมในทริปนี้แล้วใส่ข้อมูลใหม่จากไฟล์แทน</p>
+            </div>
+          </button>
+
+          <button onclick="confirmImport('APPEND')" class="w-full p-3 rounded-xl border border-sage-200 bg-sage-50/60 hover:bg-sage-100 text-left transition flex items-center gap-3">
+            <span class="text-xl">➕</span>
+            <div>
+              <p class="text-xs font-semibold text-sage-800">3. เพิ่มต่อท้ายรายการเดิม</p>
+              <p class="text-[11px] text-sage-600">เก็บรายการเดิมไว้ แล้วเพิ่มรายการจากไฟล์เข้าไปต่อท้าย</p>
+            </div>
+          </button>
+        </div>
+
+        <div class="pt-2 flex justify-end">
+          <button onclick="closeImportModal()" class="px-4 py-1.5 rounded-xl bg-latte-200 hover:bg-latte-300 text-latte-700 text-xs font-medium transition">
+            ยกเลิก
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CATEGORIES = {
+      "ค่าEV": { name: "ค่าEV & เดินทาง", icon: "⚡", bg: "bg-[#EBF3E7]", text: "text-[#47613D]", border: "border-[#D3E3CC]", bar: "bg-[#78996A]", hex: "#78996A" },
+      "ค่าที่พัก": { name: "ค่าที่พัก", icon: "🏡", bg: "#F5EDE2", text: "#5A4838", border: "#DFCDBB", bar: "#8C745D", hex: "#8C745D" },
+      "ค่าอาหาร/เครื่องดื่ม": { name: "อาหาร & คาเฟ่", icon: "☕", bg: "#FBEDE6", text: "#9E472A", border: "border-[#F7D8CB]", bar: "#D97757", hex: "#D97757" },
+      "ค่าเข้าชม/กิจกรรม": { name: "เข้าชม & กิจกรรม", icon: "🎟️", bg: "#FDF2EC", text: "#B85736", border: "border-[#F7D8CB]", bar: "#E48F73", hex: "#E48F73" },
+      "อื่น ๆ": { name: "อื่น ๆ & ช้อปปิ้ง", icon: "🧸", bg: "#F8F1E7", text: "#735E4A", border: "border-[#EADBCC]", bar: "#A8927B", hex: "#A8927B" }
+    };
+
+    const DEFAULT_APP_DATA = {
+      activeTripId: "trip_default_1",
+      trips: [
+        {
+          id: "trip_default_1",
+          name: "ทริปขับ EV แอ่วเหนือ เชียงใหม่-แม่แตง 🍃",
+          days: 3,
+          budget: 12000,
+          updatedAt: new Date().toISOString(),
+          expenses: [
+            { id: "1", day: "วันที่ 1", category: "ค่าEV", title: "ชาร์จไฟตู้ ปตท. นครสวรรค์", amount: 380 },
+            { id: "2", day: "วันที่ 1", category: "ค่าอาหาร/เครื่องดื่ม", title: "กาแฟดริป & ขนมปังปิ้ง", amount: 160 },
+            { id: "3", day: "วันที่ 1", category: "ค่าอาหาร/เครื่องดื่ม", title: "ข้าวซอยลำดวนฟ้าฮ่าม", amount: 420 },
+            { id: "4", day: "วันที่ 1", category: "ค่าที่พัก", title: "โฮมสเตย์มินิมอลตัวเมือง (คืนที่ 1)", amount: 2200 },
+            { id: "5", day: "วันที่ 2", category: "ค่าEV", title: "ชาร์จไฟ DC Fast Charge แม่ริม", amount: 450 },
+            { id: "6", day: "วันที่ 2", category: "ค่าเข้าชม/กิจกรรม", title: "บัตรชมสวนพฤกษศาสตร์แม่ริม", amount: 200 },
+            { id: "7", day: "วันที่ 2", category: "ค่าอาหาร/เครื่องดื่ม", title: "มื้อเที่ยง คาเฟ่ริมน้ำแม่แตง", amount: 890 },
+            { id: "8", day: "วันที่ 2", category: "ค่าที่พัก", title: "แกลมปิ้งกระโจมอบอุ่น แม่แตง (คืนที่ 2)", amount: 3500 },
+            { id: "9", day: "วันที่ 2", category: "ค่าอาหาร/เครื่องดื่ม", title: "หมูกระทะรับลมหนาวบนดอย", amount: 650 },
+            { id: "10", day: "วันที่ 3", category: "ค่าเข้าชม/กิจกรรม", title: "กิจกรรมล่องแก่งเรือยาง", amount: 1200 },
+            { id: "11", day: "วันที่ 3", category: "อื่น ๆ", title: "ของฝากกาดหลวง ไส้อั่ว แคบหมู", amount: 950 },
+            { id: "12", day: "วันที่ 3", category: "ค่าEV", title: "ชาร์จไฟขากลับ ตู้ PEA ลำปาง", amount: 410 }
+          ]
+        },
+        {
+          id: "trip_default_2",
+          name: "ทริปแคมป์ปิ้ง สูดไอหมอกเขาใหญ่ 2 วัน 1 คืน 🏕️",
+          days: 2,
+          budget: 6500,
+          updatedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+          expenses: [
+            { id: "201", day: "วันที่ 1", category: "ค่าEV", title: "ชาร์จไฟ EV วังน้อย", amount: 320 },
+            { id: "202", day: "วันที่ 1", category: "ค่าอาหาร/เครื่องดื่ม", title: "กาแฟและเบเกอรี่ คาเฟ่เขาใหญ่", amount: 480 },
+            { id: "203", day: "วันที่ 1", category: "ค่าเข้าชม/กิจกรรม", title: "ค่าธรรมเนียมเข้าอุทยานฯ", amount: 140 },
+            { id: "204", day: "วันที่ 1", category: "ค่าที่พัก", title: "ค่ากางเต็นท์ & อุปกรณ์แค้มป์", amount: 1800 },
+            { id: "205", day: "วันที่ 1", category: "ค่าอาหาร/เครื่องดื่ม", title: "บาร์บีคิวมื้อเย็นปิ้งย่าง", amount: 950 },
+            { id: "206", day: "วันที่ 2", category: "ค่าอาหาร/เครื่องดื่ม", title: "อาหารเช้าไข่กระทะ", amount: 260 },
+            { id: "207", day: "วันที่ 2", category: "อื่น ๆ", title: "ผลไม้ & ข้าวโพดหวานไร่สุวรรณ", amount: 350 },
+            { id: "208", day: "วันที่ 2", category: "ค่าEV", title: "ชาร์จไฟขากลับ สระบุรี", amount: 290 }
+          ]
+        }
+      ]
+    };
+
+    let appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
+    let editingExpenseId = null;
+    let pendingImportData = null;
+
+    function getActiveTrip() {
+      let trip = appData.trips.find(t => t.id === appData.activeTripId);
+      if (!trip) {
+        trip = appData.trips[0];
+        appData.activeTripId = trip.id;
+      }
+      return trip;
+    }
+
+    function saveState() {
+      const activeTrip = getActiveTrip();
+      activeTrip.updatedAt = new Date().toISOString();
+      localStorage.setItem("mojo_multi_trips_archive", JSON.stringify(appData));
+      
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      const indicator = document.getElementById("saveStatusIndicator");
+      if (indicator) {
+        indicator.textContent = `• บันทึกอัตโนมัติแล้ว (${timeStr})`;
+      }
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem("mojo_multi_trips_archive");
+      if (saved) {
+        try {
+          appData = JSON.parse(saved);
+        } catch(e) {
+          console.error(e);
+        }
+      }
+    }
+
+    function showToast(msg, icon = "✨") {
+      const toast = document.getElementById("toastNotification");
+      const toastMsg = document.getElementById("toastMessage");
+      const toastIcon = document.getElementById("toastIcon");
+      if (!toast) return;
+
+      toastMsg.textContent = msg;
+      toastIcon.textContent = icon;
+      toast.classList.remove("translate-y-[-20px]", "opacity-0", "pointer-events-none");
+      toast.classList.add("translate-y-0", "opacity-100");
+
+      setTimeout(() => {
+        toast.classList.add("translate-y-[-20px]", "opacity-0", "pointer-events-none");
+        toast.classList.remove("translate-y-0", "opacity-100");
+      }, 2200);
+    }
+
+    function resetToDefaultData() {
+      if (confirm("ต้องการรีเซ็ตข้อมูลทริปกลับเป็นค่าตัวอย่างเริ่มต้นทั้งหมดหรือไม่? (ข้อมูลที่คุณเคยบันทึกไว้จะถูกรีเซ็ต)")) {
+        localStorage.removeItem("mojo_multi_trips_archive");
+        appData = JSON.parse(JSON.stringify(DEFAULT_APP_DATA));
+        saveState();
+        renderTripSelector();
+        initTripInputs();
+        updateDayOptions();
+        renderAll();
+        showToast("รีเซ็ตข้อมูลเริ่มต้นเรียบร้อยแล้ว", "🔄");
+      }
+    }
+
+    // Initialize Page
+    window.addEventListener("DOMContentLoaded", () => {
+      loadState();
+      renderTripSelector();
+      initTripInputs();
+      updateDayOptions();
+      renderAll();
+    });
+
+    function renderTripSelector() {
+      const selector = document.getElementById("tripSelector");
+      const countBadge = document.getElementById("tripCountBadge");
+      selector.innerHTML = "";
+
+      appData.trips.forEach((t) => {
+        const total = t.expenses.reduce((s, i) => s + i.amount, 0);
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = `${t.name} (${t.days} วัน • ใช้ไป ${formatNumber(total)} บ.)`;
+        if (t.id === appData.activeTripId) {
+          opt.selected = true;
+        }
+        selector.appendChild(opt);
+      });
+
+      if (countBadge) {
+        countBadge.textContent = appData.trips.length;
+      }
+    }
+
+    function switchTrip(tripId) {
+      if (appData.activeTripId !== tripId) {
+        appData.activeTripId = tripId;
+        saveState();
+        renderTripSelector();
+        initTripInputs();
+        updateDayOptions();
+        renderAll();
+        showToast(`เปิดทริป "${getActiveTrip().name}" แล้ว`, "🧳");
+      }
+    }
+
+    function createNewTrip() {
+      const newName = prompt("ตั้งชื่อทริปใหม่ของคุณ:", "ทริปใหม่ของฉัน 🍃");
+      if (!newName || !newName.trim()) return;
+
+      const newTrip = {
+        id: "trip_" + Date.now(),
+        name: newName.trim(),
+        days: 3,
+        budget: 10000,
+        updatedAt: new Date().toISOString(),
+        expenses: []
+      };
+
+      appData.trips.unshift(newTrip);
+      appData.activeTripId = newTrip.id;
+      saveState();
+
+      renderTripSelector();
+      initTripInputs();
+      updateDayOptions();
+      renderAll();
+      closeTripsModal();
+      showToast(`สร้างทริป "${newTrip.name}" สำเร็จ`, "🎉");
+    }
+
+    function duplicateCurrentTrip() {
+      const current = getActiveTrip();
+      const newName = prompt("ชื่อทริปที่คัดลอก:", `${current.name} (สำเนา)`);
+      if (!newName || !newName.trim()) return;
+
+      const duplicated = {
+        id: "trip_" + Date.now(),
+        name: newName.trim(),
+        days: current.days,
+        budget: current.budget,
+        updatedAt: new Date().toISOString(),
+        expenses: JSON.parse(JSON.stringify(current.expenses))
+      };
+
+      appData.trips.unshift(duplicated);
+      appData.activeTripId = duplicated.id;
+      saveState();
+
+      renderTripSelector();
+      initTripInputs();
+      updateDayOptions();
+      renderAll();
+      showToast("ทำสำเนาทริปเรียบร้อยแล้ว", "📋");
+    }
+
+    function deleteCurrentTrip() {
+      if (appData.trips.length <= 1) {
+        alert("ไม่สามารถลบทริปสุดท้ายได้ ต้องมีอย่างน้อย 1 ทริปเสมอครับ");
+        return;
+      }
+      const current = getActiveTrip();
+      if (confirm(`คุณต้องการลบ "${current.name}" ออกจากคลังทริปหรือไม่?`)) {
+        appData.trips = appData.trips.filter(t => t.id !== current.id);
+        appData.activeTripId = appData.trips[0].id;
+        saveState();
+
+        renderTripSelector();
+        initTripInputs();
+        updateDayOptions();
+        renderAll();
+        showToast("ลบทริปเรียบร้อยแล้ว", "🗑️");
+      }
+    }
+
+    function deleteTripById(id) {
+      if (appData.trips.length <= 1) {
+        alert("ไม่สามารถลบทริปสุดท้ายได้ครับ");
+        return;
+      }
+      const target = appData.trips.find(t => t.id === id);
+      if (!target) return;
+
+      if (confirm(`คุณต้องการลบ "${target.name}" หรือไม่?`)) {
+        appData.trips = appData.trips.filter(t => t.id !== id);
+        if (appData.activeTripId === id) {
+          appData.activeTripId = appData.trips[0].id;
+        }
+        saveState();
+        renderTripSelector();
+        initTripInputs();
+        updateDayOptions();
+        renderAll();
+        renderPastTripsModalContent();
+        showToast("ลบทริปเรียบร้อยแล้ว", "🗑️");
+      }
+    }
+
+    function openTripsModal() {
+      renderPastTripsModalContent();
+      document.getElementById("tripsModal").classList.remove("hidden");
+    }
+
+    function closeTripsModal() {
+      document.getElementById("tripsModal").classList.add("hidden");
+    }
+
+    function renderPastTripsModalContent() {
+      const container = document.getElementById("pastTripsListContainer");
+      container.innerHTML = "";
+
+      appData.trips.forEach(t => {
+        const total = t.expenses.reduce((s, i) => s + i.amount, 0);
+        const budget = t.budget || 0;
+        const isCurrent = t.id === appData.activeTripId;
+        const dateStr = new Date(t.updatedAt).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+
+        const card = document.createElement("div");
+        card.className = `p-4 rounded-2xl border transition-all ${isCurrent ? 'bg-[#FCFAF6] border-terracotta-400 shadow-md ring-2 ring-terracotta-200' : 'bg-latte-50/70 border-latte-200 hover:border-latte-300'}`;
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-lg">🧳</span>
+                <h4 class="font-semibold text-sm text-latte-800">${escapeHtml(t.name)}</h4>
+                ${isCurrent ? '<span class="text-[10px] bg-terracotta-100 text-terracotta-700 px-2 py-0.5 rounded-full border border-terracotta-200 font-medium">📍 ทริปที่กำลังเปิด</span>' : ''}
+              </div>
+              <div class="flex items-center gap-3 text-xs text-latte-500 mt-1.5 flex-wrap">
+                <span>🗓️ ${t.days} วัน</span>
+                <span>•</span>
+                <span>💸 ยอดใช้จ่าย: <strong class="text-latte-800">${formatNumber(total)}</strong> บาท</span>
+                <span>•</span>
+                <span>🎯 งบ: ${formatNumber(budget)} บ.</span>
+                <span>•</span>
+                <span class="text-[11px] text-latte-400">อัปเดตเมื่อ: ${dateStr}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <button onclick="switchTrip('${t.id}'); closeTripsModal();" class="px-3 py-1.5 text-xs rounded-xl ${isCurrent ? 'bg-sage-600 text-white' : 'bg-sage-100 hover:bg-sage-200 text-sage-700 border border-sage-200'} font-medium transition flex items-center gap-1">
+                <span>✏️</span> ${isCurrent ? 'กำลังดู & แก้ไข' : 'ดึงมาดู & แก้ไข'}
+              </button>
+              <button onclick="deleteTripById('${t.id}')" title="ลบทริปนี้" class="p-1.5 text-xs rounded-xl bg-latte-100 hover:bg-terracotta-100 text-latte-500 hover:text-terracotta-600 transition">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function initTripInputs() {
+      const activeTrip = getActiveTrip();
+      const tripNameEl = document.getElementById("tripName");
+      const tripDaysEl = document.getElementById("tripDays");
+      const tripBudgetEl = document.getElementById("tripBudget");
+
+      tripNameEl.value = activeTrip.name || "";
+      tripDaysEl.value = activeTrip.days || 3;
+      tripBudgetEl.value = activeTrip.budget || "";
+
+      const handleNameChange = (e) => {
+        activeTrip.name = e.target.value.trim() ? e.target.value : "ทริปของฉัน";
+        saveState();
+        renderSummaryHeader();
+        renderTripSelector();
+      };
+      tripNameEl.oninput = handleNameChange;
+      tripNameEl.onchange = handleNameChange;
+
+      const handleDaysChange = (e) => {
+        const val = parseInt(e.target.value);
+        activeTrip.days = (!isNaN(val) && val >= 1) ? val : 1;
+        e.target.value = activeTrip.days;
+        updateDayOptions();
+        saveState();
+        renderAll();
+      };
+      tripDaysEl.oninput = handleDaysChange;
+      tripDaysEl.onchange = handleDaysChange;
+
+      const handleBudgetChange = (e) => {
+        const val = parseFloat(e.target.value);
+        activeTrip.budget = (!isNaN(val) && val >= 0) ? val : 0;
+        saveState();
+        renderKPIs();
+      };
+      tripBudgetEl.oninput = handleBudgetChange;
+      tripBudgetEl.onchange = handleBudgetChange;
+    }
+
+    function updateDayOptions() {
+      const activeTrip = getActiveTrip();
+      const daySelect = document.getElementById("expenseDay");
+      const editDaySelect = document.getElementById("editExpenseDay");
+      const filterDay = document.getElementById("filterDay");
+      
+      const prevSelected = daySelect.value;
+      const prevFilter = filterDay.value;
+
+      daySelect.innerHTML = "";
+      if (editDaySelect) editDaySelect.innerHTML = "";
+      filterDay.innerHTML = '<option value="ALL">ทุกวัน</option>';
+
+      for (let i = 1; i <= activeTrip.days; i++) {
+        const val = `วันที่ ${i}`;
+        
+        const opt = document.createElement("option");
+        opt.value = val;
+        opt.textContent = `🗓️ ${val}`;
+        daySelect.appendChild(opt);
+
+        if (editDaySelect) {
+          const editOpt = document.createElement("option");
+          editOpt.value = val;
+          editOpt.textContent = `🗓️ ${val}`;
+          editDaySelect.appendChild(editOpt);
+        }
+
+        const filterOpt = document.createElement("option");
+        filterOpt.value = val;
+        filterOpt.textContent = `วันที่ ${i}`;
+        filterDay.appendChild(filterOpt);
+      }
+
+      if (prevSelected && parseInt(prevSelected.replace("วันที่ ", "")) <= activeTrip.days) {
+        daySelect.value = prevSelected;
+      }
+      if (prevFilter && (prevFilter === "ALL" || parseInt(prevFilter.replace("วันที่ ", "")) <= activeTrip.days)) {
+        filterDay.value = prevFilter;
+      }
+    }
+
+    function addExpense(e) {
+      e.preventDefault();
+      const activeTrip = getActiveTrip();
+      const day = document.getElementById("expenseDay").value;
+      const category = document.getElementById("expenseCategory").value;
+      const title = document.getElementById("expenseTitle").value.trim();
+      const amount = parseFloat(document.getElementById("expenseAmount").value);
+
+      if (!title || isNaN(amount) || amount <= 0) return;
+
+      const newExpense = {
+        id: Date.now().toString(),
+        day,
+        category,
+        title,
+        amount,
+        createdAt: new Date().toISOString()
+      };
+
+      activeTrip.expenses.unshift(newExpense);
+      saveState();
+
+      document.getElementById("expenseTitle").value = "";
+      document.getElementById("expenseAmount").value = "";
+      document.getElementById("expenseTitle").focus();
+
+      renderTripSelector();
+      renderAll();
+      showToast(`เพิ่ม "${title}" ${formatNumber(amount)} บ. แล้ว`, "➕");
+    }
+
+    function openEditExpenseModal(id) {
+      const activeTrip = getActiveTrip();
+      const item = activeTrip.expenses.find(x => x.id === id);
+      if (!item) return;
+
+      editingExpenseId = id;
+      document.getElementById("editExpenseId").value = id;
+      document.getElementById("editExpenseDay").value = item.day;
+      document.getElementById("editExpenseCategory").value = item.category;
+      document.getElementById("editExpenseTitle").value = item.title;
+      document.getElementById("editExpenseAmount").value = item.amount;
+
+      document.getElementById("editExpenseModal").classList.remove("hidden");
+    }
+
+    function closeEditExpenseModal() {
+      editingExpenseId = null;
+      document.getElementById("editExpenseModal").classList.add("hidden");
+    }
+
+    function saveEditedExpense(e) {
+      e.preventDefault();
+      if (!editingExpenseId) return;
+
+      const activeTrip = getActiveTrip();
+      const item = activeTrip.expenses.find(x => x.id === editingExpenseId);
+      if (!item) return;
+
+      const newTitle = document.getElementById("editExpenseTitle").value.trim();
+      const newAmount = parseFloat(document.getElementById("editExpenseAmount").value);
+
+      if (!newTitle || isNaN(newAmount) || newAmount <= 0) return;
+
+      item.day = document.getElementById("editExpenseDay").value;
+      item.category = document.getElementById("editExpenseCategory").value;
+      item.title = newTitle;
+      item.amount = newAmount;
+
+      saveState();
+      closeEditExpenseModal();
+      renderTripSelector();
+      renderAll();
+      showToast(`แก้ไข "${newTitle}" สำเร็จแล้ว`, "✅");
+    }
+
+    function deleteExpense(id) {
+      const activeTrip = getActiveTrip();
+      const item = activeTrip.expenses.find(i => i.id === id);
+      const title = item ? item.title : "รายการ";
+
+      if (confirm(`ต้องการลบรายการ "${title}" หรือไม่?`)) {
+        activeTrip.expenses = activeTrip.expenses.filter(i => i.id !== id);
+        saveState();
+        renderTripSelector();
+        renderAll();
+        showToast(`ลบ "${title}" แล้ว`, "🗑️");
+      }
+    }
+
+    function clearAllExpenses() {
+      const activeTrip = getActiveTrip();
+      if (confirm(`คุณต้องการล้างรายการค่าใช้จ่ายทั้งหมดใน "${activeTrip.name}" หรือไม่?`)) {
+        activeTrip.expenses = [];
+        saveState();
+        renderTripSelector();
+        renderAll();
+        showToast("ล้างรายการค่าใช้จ่ายทั้งหมดแล้ว", "🗑️");
+      }
+    }
+
+    function formatNumber(num) {
+      return (num || 0).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderSummaryHeader() {
+      const activeTrip = getActiveTrip();
+      document.getElementById("summaryTripTitle").textContent = activeTrip.name ? `สัดส่วน: ${activeTrip.name}` : "สัดส่วนค่าใช้จ่าย & การใช้งบประมาณ";
+      document.getElementById("tripDurationBadge").textContent = `🌿 ${activeTrip.days} วัน`;
+      
+      const totalSpent = activeTrip.expenses.reduce((s, i) => s + i.amount, 0);
+      const dailyAvg = totalSpent / (activeTrip.days || 1);
+      const avgBadge = document.getElementById("tripDailyAvgBadge");
+      if (avgBadge) {
+        avgBadge.textContent = `☕ เฉลี่ย ${formatNumber(dailyAvg)} บ./วัน`;
+      }
+    }
+
+    function renderKPIs() {
+      renderSummaryHeader();
+      const activeTrip = getActiveTrip();
+
+      const totalSpent = activeTrip.expenses.reduce((s, i) => s + i.amount, 0);
+      const budget = activeTrip.budget || 0;
+      const days = activeTrip.days || 1;
+
+      const progressFill = document.getElementById("progressBarFill");
+      const progressLabel = document.getElementById("progressBarLabel");
+      const progressBarDetails = document.getElementById("progressBarDetails");
+      const alertBox = document.getElementById("budgetAlertBox");
+
+      const donutCenterSub = document.getElementById("donutCenterSub");
+      const donutCenterValue = document.getElementById("donutCenterValue");
+      const donutCenterTotal = document.getElementById("donutCenterTotal");
+      const donutFootnote = document.getElementById("donutFootnote");
+
+      donutCenterTotal.textContent = `${formatNumber(totalSpent)} บ.`;
+
+      if (budget > 0) {
+        const diff = budget - totalSpent;
+        const usage = (totalSpent / budget) * 100;
+
+        progressLabel.textContent = `${usage.toFixed(1)}%`;
+        progressBarDetails.textContent = `${formatNumber(totalSpent)} / ${formatNumber(budget)} บาท`;
+        progressFill.style.width = `${Math.min(100, usage)}%`;
+
+        donutCenterSub.textContent = "ของงบประมาณ";
+        donutCenterValue.textContent = `${usage.toFixed(0)}%`;
+
+        if (diff >= 0) {
+          progressFill.className = "h-full bg-sage-500 rounded-full transition-all duration-500";
+          alertBox.className = "p-3.5 rounded-xl flex items-center gap-2 text-xs font-medium bg-sage-100/80 text-sage-700 border border-sage-300";
+          alertBox.innerHTML = `<span>🐻💚</span><span><strong>ยังอยู่ในงบจ้า:</strong> เหลือใช้ได้อีก <strong>${formatNumber(diff)}</strong> บาท (เฉลี่ยใช้วันละ ${(diff/days).toFixed(2)} บาท)</span>`;
+          donutFootnote.textContent = `ยอดเงินยังคงเหลือ ${formatNumber(diff)} บาท`;
+        } else {
+          const over = Math.abs(diff);
+          progressFill.className = "h-full bg-terracotta-500 rounded-full transition-all duration-500";
+          alertBox.className = "p-3.5 rounded-xl flex items-center gap-2 text-xs font-medium bg-terracotta-100 text-terracotta-700 border border-terracotta-200";
+          alertBox.innerHTML = `<span>🥺💸</span><span><strong>เกินงบที่ตั้งไว้:</strong> ตอนนี้ใช้เกินไปแล้ว <strong>${formatNumber(over)}</strong> บาท (${usage.toFixed(1)}% ของงบ)</span>`;
+          donutFootnote.textContent = `⚠️ เตือน: จ่ายเกินงบไปแล้ว ${formatNumber(over)} บาท`;
+        }
+      } else {
+        progressLabel.textContent = "-";
+        progressBarDetails.textContent = `${formatNumber(totalSpent)} บาท (ไม่ได้ตั้งงบ)`;
+        progressFill.style.width = `100%`;
+        progressFill.className = "h-full bg-latte-400 rounded-full";
+
+        donutCenterSub.textContent = "ยอดรวมทั้งหมด";
+        donutCenterValue.textContent = `${formatNumber(totalSpent)}`;
+        donutCenterValue.className = "text-xl sm:text-2xl font-bold text-latte-800 tabular-nums tracking-tight mt-0.5";
+
+        alertBox.className = "p-3 rounded-xl flex items-center gap-2 text-xs font-medium bg-latte-100 text-latte-600 border border-latte-200";
+        alertBox.innerHTML = `<span>💡</span><span>ตั้งงบประมาณที่ Step 1 เพื่อเปิดแถบเปรียบเทียบและการเตือนงบ</span>`;
+        donutFootnote.textContent = `บันทึกแล้ว ${activeTrip.expenses.length} รายการ`;
+      }
+
+      renderDonutChart(totalSpent);
+    }
+
+    function renderDonutChart(totalSpent) {
+      const activeTrip = getActiveTrip();
+      const group = document.getElementById("donutSegmentsGroup");
+      const legend = document.getElementById("donutLegendContainer");
+      group.innerHTML = "";
+      legend.innerHTML = "";
+
+      const radius = 50;
+      const circumference = 2 * Math.PI * radius; // ≈ 314.159
+
+      const totals = {};
+      Object.keys(CATEGORIES).forEach(c => totals[c] = 0);
+      activeTrip.expenses.forEach(i => {
+        if (totals[i.category] !== undefined) totals[i.category] += i.amount;
+        else totals["อื่น ๆ"] = (totals["อื่น ๆ"] || 0) + i.amount;
+      });
+
+      if (totalSpent <= 0) {
+        const empty = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        empty.setAttribute("cx", "70");
+        empty.setAttribute("cy", "70");
+        empty.setAttribute("r", radius);
+        empty.setAttribute("fill", "transparent");
+        empty.setAttribute("stroke", "#EFE7DC");
+        empty.setAttribute("stroke-width", "16");
+        group.appendChild(empty);
+
+        legend.innerHTML = `<div class="col-span-2 text-center py-2 text-xs text-latte-400">ยังไม่มีรายการค่าใช้จ่าย กรอกรายการที่ Step 2 หรือกดนำเข้า CSV ได้เลย</div>`;
+        return;
+      }
+
+      let cumulative = 0;
+
+      Object.entries(CATEGORIES).forEach(([catKey, info]) => {
+        const amt = totals[catKey] || 0;
+        const pct = amt / totalSpent;
+        const pctStr = (pct * 100).toFixed(1);
+
+        if (amt > 0) {
+          const sLength = pct * circumference;
+          const sOffset = -(cumulative * circumference);
+
+          const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          c.setAttribute("cx", "70");
+          c.setAttribute("cy", "70");
+          c.setAttribute("r", radius);
+          c.setAttribute("fill", "transparent");
+          c.setAttribute("stroke", info.hex);
+          c.setAttribute("stroke-width", "16");
+          c.setAttribute("stroke-dasharray", `${sLength} ${circumference}`);
+          c.setAttribute("stroke-dashoffset", sOffset);
+          c.setAttribute("class", "donut-segment");
+          group.appendChild(c);
+
+          cumulative += pct;
+        }
+
+        const lItem = document.createElement("div");
+        lItem.className = "flex items-center justify-between p-2 rounded-xl bg-latte-100/70 border border-latte-200 text-xs";
+        lItem.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: ${info.hex}"></span>
+            <span class="font-medium text-latte-700 truncate">${info.icon} ${info.name}</span>
+          </div>
+          <div class="text-right flex items-baseline gap-1.5 flex-shrink-0">
+            <span class="font-semibold text-latte-800 tabular-nums">${formatNumber(amt)} บ.</span>
+            <span class="text-[10px] text-latte-500 font-medium">(${pctStr}%)</span>
+          </div>
+        `;
+        legend.appendChild(lItem);
+      });
+    }
+
+    function renderDailySummary() {
+      const active = getActiveTrip();
+      const list = document.getElementById("dailySummaryList");
+      list.innerHTML = "";
+
+      const totals = {};
+      for (let i = 1; i <= active.days; i++) totals[`วันที่ ${i}`] = 0;
+      active.expenses.forEach(i => {
+        totals[i.day] = (totals[i.day] || 0) + i.amount;
+      });
+
+      const grandTotal = active.expenses.reduce((s, i) => s + i.amount, 0);
+
+      for (let i = 1; i <= active.days; i++) {
+        const d = `วันที่ ${i}`;
+        const amt = totals[d] || 0;
+        const pct = grandTotal > 0 ? ((amt / grandTotal) * 100).toFixed(1) : "0.0";
+
+        const row = document.createElement("div");
+        row.className = "py-2.5 flex items-center justify-between text-xs sm:text-sm";
+        row.innerHTML = `
+          <div>
+            <p class="font-medium text-latte-800 flex items-center gap-1.5">
+              <span>🗓️</span> ${d}
+            </p>
+            <p class="text-[11px] text-latte-500">${pct}% ของค่าใช้จ่ายทั้งหมด</p>
+          </div>
+          <div class="text-right">
+            <p class="font-semibold text-latte-800 tabular-nums">${formatNumber(amt)} <span class="text-xs font-normal text-latte-500">บาท</span></p>
+          </div>
+        `;
+        list.appendChild(row);
+      }
+    }
+
+    function renderExpenseTable() {
+      const active = getActiveTrip();
+      const tbody = document.getElementById("expenseTableBody");
+      const empty = document.getElementById("emptyState");
+      const fCat = document.getElementById("filterCategory").value;
+      const fDay = document.getElementById("filterDay").value;
+
+      tbody.innerHTML = "";
+      const filtered = active.expenses.filter(i => {
+        const matchCat = fCat === "ALL" || i.category === fCat;
+        const matchDay = fDay === "ALL" || i.day === fDay;
+        return matchCat && matchDay;
+      });
+
+      if (filtered.length === 0) {
+        empty.classList.remove("hidden");
+      } else {
+        empty.classList.add("hidden");
+      }
+
+      filtered.forEach((i, idx) => {
+        const cat = CATEGORIES[i.category] || CATEGORIES["อื่น ๆ"];
+        const tr = document.createElement("tr");
+        const rowBg = idx % 2 === 0 ? "bg-[#FCFAF6]" : "bg-[#F8F3EB]/70";
+        tr.className = `${rowBg} hover:bg-latte-200/50 transition-colors`;
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 text-xs text-latte-600 whitespace-nowrap">${i.day}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${cat.bg} ${cat.text} ${cat.border}">
+              <span>${cat.icon}</span>
+              <span>${i.category}</span>
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-latte-800 font-medium">${escapeHtml(i.title)}</td>
+          <td class="py-2.5 px-3 text-right font-semibold text-latte-800 tabular-nums">${formatNumber(i.amount)}</td>
+          <td class="py-2.5 px-3 text-center no-print">
+            <div class="flex items-center justify-center gap-1">
+              <button onclick="openEditExpenseModal('${i.id}')" title="แก้ไขรายการนี้" class="p-1.5 text-latte-500 hover:text-sage-700 hover:bg-sage-100 rounded-lg transition">
+                ✏️
+              </button>
+              <button onclick="deleteExpense('${i.id}')" title="ลบรายการนี้" class="p-1.5 text-latte-400 hover:text-terracotta-600 hover:bg-terracotta-100 rounded-lg transition">
+                🗑️
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderAll() {
+      renderKPIs();
+      renderDailySummary();
+      renderExpenseTable();
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ==========================================
+    // CSV Export & Import Engine
+    // ==========================================
+
+    function exportToCSV() {
+      const active = getActiveTrip();
+      if (active.expenses.length === 0) {
+        alert("ยังไม่มีรายการค่าใช้จ่ายให้ส่งออกจ้า");
+        return;
+      }
+      let csv = "\uFEFFวัน,หมวดหมู่,รายการ,จำนวนเงิน (บาท)\n";
+      active.expenses.forEach(i => {
+        csv += `"${i.day}","${i.category}","${i.title.replace(/"/g, '""')}",${i.amount}\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${active.name || "MOJO_Trip"}_ค่าใช้จ่าย.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("ส่งออกไฟล์ CSV สำเร็จ", "📤");
+    }
+
+    function triggerImportCSV() {
+      const input = document.getElementById("csvFileInput");
+      input.value = "";
+      input.click();
+    }
+
+    function parseCSVText(text) {
+      if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+      }
+      const lines = [];
+      let currentRow = [];
+      let currentCell = '';
+      let insideQuotes = false;
+
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+          if (insideQuotes && nextChar === '"') {
+            currentCell += '"';
+            i++;
+          } else {
+            insideQuotes = !insideQuotes;
+          }
+        } else if (char === ',' && !insideQuotes) {
+          currentRow.push(currentCell.trim());
+          currentCell = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+          if (char === '\r' && nextChar === '\n') {
+            i++;
+          }
+          currentRow.push(currentCell.trim());
+          if (currentRow.some(c => c !== '')) {
+            lines.push(currentRow);
+          }
+          currentRow = [];
+          currentCell = '';
+        } else {
+          currentCell += char;
+        }
+      }
+      if (currentCell || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        if (currentRow.some(c => c !== '')) {
+          lines.push(currentRow);
+        }
+      }
+      return lines;
+    }
+
+    function handleCSVImport(e) {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const content = evt.target.result;
+          const rows = parseCSVText(content);
+          if (rows.length < 2) {
+            alert("ไฟล์ CSV ไม่มีข้อมูลรายการที่สามารถนำเข้าได้");
+            return;
+          }
+
+          const header = rows[0].map(h => h.toLowerCase().replace(/[\(\)\s]/g, ''));
+          let dayIdx = header.findIndex(h => h.includes('วัน') || h.includes('day'));
+          let catIdx = header.findIndex(h => h.includes('หมวด') || h.includes('category'));
+          let titleIdx = header.findIndex(h => h.includes('ราย') || h.includes('title') || h.includes('desc'));
+          let amtIdx = header.findIndex(h => h.includes('จำนวน') || h.includes('เงิน') || h.includes('amount') || h.includes('บาท') || h.includes('price'));
+
+          if (dayIdx === -1) dayIdx = 0;
+          if (catIdx === -1) catIdx = 1;
+          if (titleIdx === -1) titleIdx = 2;
+          if (amtIdx === -1) amtIdx = 3;
+
+          const parsedItems = [];
+          let maxDayNum = 1;
+          let sumAmount = 0;
+
+          for (let r = 1; r < rows.length; r++) {
+            const row = rows[r];
+            if (!row || row.length === 0) continue;
+
+            const dayVal = (row[dayIdx] || "วันที่ 1").trim();
+            const catVal = (row[catIdx] || "อื่น ๆ").trim();
+            const titleVal = (row[titleIdx] || "รายการ").trim();
+            const amtStr = (row[amtIdx] || "").toString().replace(/,/g, '').trim();
+            const amountVal = parseFloat(amtStr);
+
+            if (isNaN(amountVal) || amountVal <= 0) continue;
+
+            const dayMatch = dayVal.match(/\d+/);
+            if (dayMatch) {
+              const dNum = parseInt(dayMatch[0]);
+              if (dNum > maxDayNum) maxDayNum = dNum;
+            }
+
+            sumAmount += amountVal;
+            parsedItems.push({
+              id: Date.now().toString() + "_" + r,
+              day: dayVal.startsWith("วันที่") ? dayVal : `วันที่ ${dayVal}`,
+              category: CATEGORIES[catVal] ? catVal : "อื่น ๆ",
+              title: titleVal,
+              amount: amountVal,
+              createdAt: new Date().toISOString()
+            });
+          }
+
+          if (parsedItems.length === 0) {
+            alert("ไม่พบรายการค่าใช้จ่ายที่ถูกต้องในไฟล์ CSV");
+            return;
+          }
+
+          let suggestedTripName = file.name.replace(/\.[^/.]+$/, "").replace(/_ค่าใช้จ่าย$/, "");
+          if (!suggestedTripName || suggestedTripName === "MOJO_Trip") {
+            suggestedTripName = "ทริปนำเข้าจาก CSV 🍃";
+          }
+
+          pendingImportData = {
+            suggestedName: suggestedTripName,
+            items: parsedItems,
+            maxDays: Math.max(1, maxDayNum),
+            sumAmount: sumAmount
+          };
+
+          // Open Import Options Modal
+          document.getElementById("importItemCount").textContent = parsedItems.length;
+          document.getElementById("importSummaryText").textContent = `ยอดรวมค่าใช้จ่าย: ${formatNumber(sumAmount)} บาท (${suggestedTripName})`;
+          document.getElementById("importOptionsModal").classList.remove("hidden");
+
+        } catch(err) {
+          console.error(err);
+          alert("เกิดข้อผิดพลาดในการอ่านไฟล์ CSV: " + err.message);
+        }
+      };
+
+      reader.readAsText(file, "UTF-8");
+    }
+
+    function closeImportModal() {
+      pendingImportData = null;
+      document.getElementById("importOptionsModal").classList.add("hidden");
+    }
+
+    function confirmImport(mode) {
+      if (!pendingImportData) return;
+
+      const { suggestedName, items, maxDays } = pendingImportData;
+
+      if (mode === 'NEW') {
+        // Create new trip with imported items
+        const newTrip = {
+          id: "trip_" + Date.now(),
+          name: suggestedName,
+          days: Math.max(3, maxDays),
+          budget: Math.ceil((pendingImportData.sumAmount * 1.15) / 1000) * 1000,
+          updatedAt: new Date().toISOString(),
+          expenses: items
+        };
+        appData.trips.unshift(newTrip);
+        appData.activeTripId = newTrip.id;
+        showToast(`สร้างทริปใหม่ "${suggestedName}" พร้อม ${items.length} รายการ`, "✨");
+      } else if (mode === 'REPLACE') {
+        // Replace current trip expenses
+        const active = getActiveTrip();
+        active.expenses = items;
+        if (maxDays > active.days) active.days = maxDays;
+        showToast(`แทนที่ข้อมูลด้วย ${items.length} รายการจากไฟล์แล้ว`, "🔄");
+      } else if (mode === 'APPEND') {
+        // Append to current trip
+        const active = getActiveTrip();
+        active.expenses = [...active.expenses, ...items];
+        if (maxDays > active.days) active.days = maxDays;
+        showToast(`เพิ่ม ${items.length} รายการต่อท้ายเรียบร้อยแล้ว`, "➕");
+      }
+
+      saveState();
+      renderTripSelector();
+      initTripInputs();
+      updateDayOptions();
+      renderAll();
+      closeImportModal();
+    }
+  </script>
+</body>
+</html>
